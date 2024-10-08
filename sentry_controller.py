@@ -14,7 +14,7 @@ from sys import exit
 #the counter associated with the input address within the counter line itself. This will be useful
 #for determining when to send parent IM nodes with counters. Addr is assumed to be cache line aligned
 def calc_counter_id(addr):
-    return ((addr - DELTA[1]) // 64)
+    return (addr - DELTA[1]) >> 6 # (addr - DELTA[1]) // 64 I broke this  and didnt realize im so dumb :(((
 
 #function to create a stack of ancestor addresses using a child address 
 #and a desired number of levels. Returns the stack length. Assumes an empty stack to start
@@ -54,9 +54,10 @@ def empty_stack(stack, stack_len, mem_file, m_cache, output):
         if child_line == DELTA[13]: #if we are at root we do not cache the node
             send_merkle_packet(IM_OP, child_line, 13, 0, parent_addr, None, output)
         else:                       #general case; not at root
-
             #cache the child, recording the level and way for the cache entry
             data = read_line(mem_file, child_line)              #read entire cacheline
+            if child_line == DELTA[12]:                         #we only use 32 bytes here
+                data = data[0:32]
             level, way = m_cache.write_cache(child_line, data)  #can only write entire cache line (address must be block aligned!)
 
             send_merkle_packet(IM_OP, child_addr, level, way, parent_addr, data, output)
@@ -76,9 +77,9 @@ def ancestry(counter_id):
     return levels
 
 #function to send 32 cache lines of data to 'output' starting at the address 'addr'
-def send_cache_lines(addr, parent_addr, memory, output):
+def send_cache_lines(addr, parent_addr, memory, num_lines, output):
 
-    for i in range(32):
+    for i in range(num_lines):
         smac_addr = (addr // 4) + SMAC_ADDR_START
         memory.seek(addr)
         line = memory.read(64)
@@ -87,10 +88,9 @@ def send_cache_lines(addr, parent_addr, memory, output):
         send_data_packet(DATA_OP, addr, parent_addr, line, smac, output)
         addr += 64
         smac_addr += 16
+        parent_addr += 2
 
     return
-
-
 
 #function takes a start address, length, and an ouput queue and sends packets
 #for verification to the output queue as appropriate to fit the verification 
@@ -127,26 +127,37 @@ def verify_range(start, length, levels, ways, mem_file, output):
     empty_stack(ancestor_stack, stack_len, memory, merkle_cache, output)
     
     #Send first data counter here
-    send_cache_lines(start, counter_addr, memory, output)
+    #TODO: get this to work so we can start sending in the middle of a counter line
+    #print(counter_addr & ((1 << 6) - 1))
+    num_lines = 32 - ((counter_addr & ((1 << 6) - 1)) >> 1) & 31 # 32 - ((offset / 2) % 32)
+    #print(num_lines)
+    send_cache_lines(start, counter_addr, memory, num_lines, output)
 
     #increment address of current data and counter and calculate counter id
-    start += 2048
-    counter_addr += 64
+    start += (num_lines << 6) #num_lines * 64
+    counter_addr += (num_lines << 1 )  #num_lines * 2
     counter_id = calc_counter_id(counter_addr & ~((1 << 6) - 1)) #must align counter to cache line boundary 
-
     #send counters and data 
     while start < end:
         #print("processing counter with id == %d" % counter_id)
         num_ancestors = ancestry(counter_id)
+        #print("c_id: %d, num_ancestors: %d" % (counter_id, num_ancestors))
         stack_len = create_stack(counter_addr, num_ancestors, ancestor_stack)
         empty_stack(ancestor_stack, stack_len, memory, merkle_cache, output)
 
-        #Send corresponding data here
-        send_cache_lines(start, counter_addr, memory, output)
+        #special case where we may have less than 32 lines to send. Will also handle if we have exactly 32 lines left to send
+        if end - start < 2048:
+            num_lines = ((end - start - 1) >> 6) + 1    # ((end - start - 1) // 64) + 1 == number of lines to send
+            print("processing %d extra lines" % num_lines)
+            send_cache_lines(start, counter_addr, memory, num_lines, output)
+        else:
+            #Send corresponding data here
+            send_cache_lines(start, counter_addr, memory, 32, output)
 
         counter_addr += 64 #go to next counter group
         start += 2048    #go to next set of data cache lines
         counter_id += 1
+
 
     #merkle_cache.print_cache()
     #print(counter_id)

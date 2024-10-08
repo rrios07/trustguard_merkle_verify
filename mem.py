@@ -118,10 +118,14 @@ def open_mem(path):
 #create_memory("test_file.txt")
 
 #file = open("test_file.txt", "rb")
+
+#file.seek(0x10aaae340)
+#root = file.read(16)
+#print(root)
 # fill_data_macs(file)
 
 # mask = ~((1 << 6) - 1)
-# start_addr = 0x100000040 + (64 * 1550000)
+# start_addr = 0x100000040 #+ (64 * 1550000)
 # for i in range(0, 11):
 #     parent_addr = getParentAddr(start_addr)
 #     file.seek(start_addr)
@@ -131,6 +135,7 @@ def open_mem(path):
 #     im_val = file.read(16)
 #     print("child address: %s, hash: %s" %(hex(start_addr), hash_val.digest())) 
 #     print("parent address: %s, IM: %s" %(hex(parent_addr), im_val))
+#     print(im_val == hash_val.digest())
 #     start_addr = parent_addr & mask #get rid off offset bits
 
 # parent_addr = getParentAddr(start_addr)
@@ -142,15 +147,15 @@ def open_mem(path):
 # print(root_val)
 # print(hash_val.digest()) 
 
-# data_addr = 0x00000000 + (64 * (1 << 26 - 1))
+# data_addr = 0x00000000 + 64 #+ (64 * (1 << 26 - 1))
 # file.seek(data_addr)
 # val = file.read(64)
-# file.seek(0x100000040 + (2 * (1 << 26 - 1)))
+# file.seek(0x100000040 + 2) #+ (2 * (1 << 26 - 1))
 # ctr = file.read(2)
 # val += ctr + data_addr.to_bytes(4, byteorder='big')
 # hash_val = hashlib.md5(val)
-# file.seek(0x120000000 + (16 * (1 << 26 - 1)))
+# file.seek(0x120000000 + 16) #+ (16 * (1 << 26 - 1))
 # hashed_val = file.read(16)
 # print(hash_val.digest())
 # print(hashed_val)
-# #print(hex(getParentAddr(0x100000040 + (64 * 1))))
+#print(hex(getParentAddr(0x100000040 + (64 * 1))))

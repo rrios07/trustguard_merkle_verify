@@ -36,8 +36,10 @@ from sentry import sentry_sim
 
 output_queue = queue.Queue(maxsize=100)
 
-controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 12), 1 << 20, 12, 2, "test_file.txt", output_queue))
-sentry_thread = threading.Thread(target = sentry_sim, args=(output_queue, ))
+#controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 12), 1 << 20, 12, 2, "test_file.txt", output_queue))
+controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 12), 10000000, 12, 2, "test_file.txt", output_queue))
+#controller_thread = threading.Thread(target = verify_range, args=(0x00000000, 4034, 12, 2, "test_file.txt", output_queue))
+sentry_thread = threading.Thread(target = sentry_sim, args=(4, 12, 2, output_queue))
 
 controller_thread.start()
 sentry_thread.start()

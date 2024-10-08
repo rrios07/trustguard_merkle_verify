@@ -42,7 +42,7 @@ class m_cache:  #will have one set per level in the tree (not including data or 
     #sentry side functionality where cache controlling is done by the controlling side. If we 
     #continue working on this system eventually the control will exist in hardware, and so there
     #will simply be a single cache controller instead of this supervised cache mirroring method
-    def write_cache_supervised(self, addr, way, level):
+    def write_cache_supervised(self, addr, way, level, data):
 
         self.sets[level].lines[way].valid = 1
         self.sets[level].lines[way].tag = addr
@@ -101,6 +101,8 @@ class m_cache:  #will have one set per level in the tree (not including data or 
                     return cache_set.lines[way].data[offset : offset + 16]
         
         #if we get here it was a cache miss
+        print("cache miss occurred")
+        #self.print_cache()
         return -1
 
 #initialize a cache object. There should be a set for each level in the tree

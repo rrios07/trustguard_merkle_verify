@@ -29,7 +29,7 @@ class data_packet:
 
 #function to send a merkle packet to the sentry
 def send_merkle_packet(op, addr, level, way, parentAddr, line, output):
-    print("addr: %s, parent_addr: %s" % (hex(addr), hex(parentAddr)))
+    #print("addr: %s, parent_addr: %s" % (hex(addr), hex(parentAddr)))
 
     packet = merkle_packet(op, addr, level, way, parentAddr, line)
     output.put(packet)
@@ -37,7 +37,7 @@ def send_merkle_packet(op, addr, level, way, parentAddr, line, output):
 
 #function to send a data packet to the sentry
 def send_data_packet(op, addr, parentAddr, line, smac, output):
-    print("addr: %s, parent_addr: %s" % (hex(addr), hex(parentAddr)))
+    #print("addr: %s, parent_addr: %s" % (hex(addr), hex(parentAddr)))
 
     packet = data_packet(op, addr, parentAddr, line, smac)
     output.put(packet)
