@@ -1,5 +1,6 @@
 import tree_levels
 
+
 class root_reg:
 
     def __init__(self, root=None):
@@ -22,10 +23,14 @@ class m_cache_set:
 
 class m_cache:  #will have one set per level in the tree (not including data or root)
 
+
     def __init__(self, levels, ways):
         self.sets = [m_cache_set(ways) for i in range(levels) ]
         self.levels = levels
         self.ways = ways
+        #to track the amount of reads and writes on each level for data tracking
+        self.CACHE_WRITES = [0] * levels 
+        self.CACHE_READS = [0] * levels
 
     #print the contents of our cache
     def print_cache(self):
@@ -47,6 +52,7 @@ class m_cache:  #will have one set per level in the tree (not including data or 
         self.sets[level].lines[way].valid = 1
         self.sets[level].lines[way].tag = addr
         self.sets[level].lines[way].data = data[:]
+        self.CACHE_WRITES[level] += 1
         return
 
 
@@ -73,11 +79,13 @@ class m_cache:  #will have one set per level in the tree (not including data or 
                 self.sets[level].lines[way].valid = 1
                 self.sets[level].lines[way].tag = tag
                 self.sets[level].lines[way].data = data[:]
+                self.CACHE_WRITES[level] += 1
                 return (level, way)
         
         #print("set is full; replacing smallest address")
         self.sets[level].lines[min_way].tag = tag
         self.sets[level].lines[min_way].data = data[:]
+        self.CACHE_WRITES[level] += 1
         return (level, min_way)
     
     #function to read a value from the cache. If the parent address
@@ -96,14 +104,22 @@ class m_cache:  #will have one set per level in the tree (not including data or 
 
             if cache_set.lines[way].tag == tag:
                 if level == 0: #parent is a counter
+                    self.CACHE_READS[level] += 1
                     return cache_set.lines[way].data[offset : offset + 2]
                 else:
+                    self.CACHE_READS[level] += 1
                     return cache_set.lines[way].data[offset : offset + 16]
         
         #if we get here it was a cache miss
         print("cache miss occurred")
         #self.print_cache()
         return -1
+
+    #NOTE: could also add a supervised read function that takes level and address as args,
+    #but it would not change functionality and its implementation would be trivial. However,
+    #this would make the sentry side even simpler as level would not need to be determined 
+    #based on address (as is done now).
+
 
 #initialize a cache object. There should be a set for each level in the tree
 #the minimum number of ways is dependent upon how many hash engines we have to 

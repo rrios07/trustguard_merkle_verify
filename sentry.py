@@ -6,6 +6,8 @@ import cache
 import hashlib
 import threading
 import packet
+import csv
+
 
 #function to process a given data packet. This either consists of caching and verifying its
 #contents if it is a merkle packet, storing the value in the root register if it is a root packet,
@@ -98,6 +100,15 @@ def sentry_sim(num_engines, levels, ways, input_queue):
                     t.start()
             except queue.Empty:
                 #if we end up here then the producer stopped producing, we are done
+                print(merkle_cache.CACHE_WRITES)
+                print(merkle_cache.CACHE_READS)
+                cache_stats = [merkle_cache.CACHE_WRITES, merkle_cache.CACHE_READS]
+                # Open the file in write mode
+                with open("cache_data.csv", 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    # Write the data to the CSV file
+                    writer.writerows(cache_stats)
+
                 print("queue was empty for 3 seconds; we are done receiving")
                 exit("queue was empty for 3 seconds!")
 

@@ -8,42 +8,23 @@ import queue
 from sentry_controller import verify_range
 import threading
 from sentry import sentry_sim
+import sys
 
 #according to Hansen, there are 12 IM levels including the counter level
-# my_cache = cache.init_cache(12, 2) 
-# #print(my_cache.sets)
 
-# byte_vals = bytearray(64)
-# byte_vals[0] = 0xaa
-
-# # print(tree_levels.getLevel(0x10aaaa250))
-# # print(hex(tree_levels.getParentAddr(0x10aaae340)))
-# my_cache.write_cache(0x10aaaa280, byte_vals)
-# #my_cache.print_cache()
-# byte_vals[0] = 0xbb
-# my_cache.write_cache(0x10aaaa3c0, byte_vals)
-# byte_vals[0] = 0xcc
-# byte_vals[-1] = 0xdd 
-# my_cache.write_cache(0x10aaaa400, byte_vals)
-
-
-# my_cache.print_cache()
-
-# print(my_cache.read_cache(0x10aaaa400 + 16))
-
-# print(hex(tree_levels.getParentAddr(0x000))) 
-# print(hex(0x10aaae340 &  ~((1 << 6) - 1)))
-
+num_engines = int(sys.argv[1])
+num_ways = int(sys.argv[2])
+start = int(sys.argv[3], 16)    #start should be in hex format i.e 0x00... 
+length = int(sys.argv[4])       #length should be in decimal
 output_queue = queue.Queue(maxsize=100)
 
 #controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 12), 1 << 20, 12, 2, "test_file.txt", output_queue))
-controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 12), 10000000, 12, 2, "test_file.txt", output_queue))
-#controller_thread = threading.Thread(target = verify_range, args=(0x00000000, 4034, 12, 2, "test_file.txt", output_queue))
-sentry_thread = threading.Thread(target = sentry_sim, args=(4, 12, 2, output_queue))
+#controller_thread = threading.Thread(target = verify_range, args=(0x00000000 + (1 << 15), 10000000, 12, num_ways, "test_file.txt", output_queue))
+controller_thread = threading.Thread(target = verify_range, args=(start, length, 12, num_ways, "test_file.txt", output_queue))
+sentry_thread = threading.Thread(target = sentry_sim, args=(num_engines, 12, num_ways, output_queue))
 
 controller_thread.start()
 sentry_thread.start()
 
 controller_thread.join()
 sentry_thread.join()
-#verify_range(0x00000000 + (1 << 12), 1 << 20, 12, 2, "test_file.txt", output_queue)
