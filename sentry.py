@@ -102,9 +102,9 @@ def sentry_sim(num_engines, levels, ways, input_queue):
                 #if we end up here then the producer stopped producing, we are done
                 print(merkle_cache.CACHE_WRITES)
                 print(merkle_cache.CACHE_READS)
-                cache_stats = [merkle_cache.CACHE_WRITES, merkle_cache.CACHE_READS]
+                cache_stats = [merkle_cache.CACHE_WRITES + merkle_cache.CACHE_READS]
                 # Open the file in write mode
-                with open("cache_data.csv", 'a', newline='') as file:
+                with open("cache_data.csv", 'a') as file:
                     writer = csv.writer(file)
                     # Write the data to the CSV file
                     writer.writerows(cache_stats)
