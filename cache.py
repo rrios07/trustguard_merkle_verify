@@ -40,7 +40,7 @@ class m_cache:  #will have one set per level in the tree (not including data or 
 
         for level in range(levels): #for each level
             for way in range(ways):
-                if level != 11:
+                if level != 12:
                     print("level %d, way %d: %s" % (level, way, self.sets[level].lines[way]))
 
     #function to write to the cache with way and level pre-specified. This will emulate the 
@@ -109,6 +109,25 @@ class m_cache:  #will have one set per level in the tree (not including data or 
                 else:
                     self.CACHE_READS[level] += 1
                     return cache_set.lines[way].data[offset : offset + 16]
+        
+        #if we get here it was a cache miss
+        print("cache miss occurred")
+        #self.print_cache()
+        return -1
+
+    #function to read a line from the cache. Useful for reading counter lines for buffering to
+    #avoid numerous reads to the cache
+    def read_cache_line(self, addr):
+        level = tree_levels.getLevel(addr) - 1 #lowest cached level is level 1 which is index 0, so need to decrement 1 
+        cache_set = self.sets[level]   
+        tag = addr & ~((1 << 6) - 1) 
+        offset = addr & ((1 << 6) - 1)
+
+        #first check to see if any entries are invalid
+        for way in range(len(cache_set.lines)):
+
+            if cache_set.lines[way].tag == tag:
+                    return cache_set.lines[way].data[:]
         
         #if we get here it was a cache miss
         print("cache miss occurred")
