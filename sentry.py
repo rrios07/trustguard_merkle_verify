@@ -13,7 +13,7 @@ import csv
 #contents if it is a merkle packet, storing the value in the root register if it is a root packet,
 #or reading the counter line from the cache and concatenating data, counter, and addr
 #if it is a data packet
-def proc_packet(rec_packet, merkle_cache, root_reg):
+def proc_packet(rec_packet, merkle_cache, root_reg, c_buff):
     
     #if it is a merkle packet, write the contents to the cache first
     if rec_packet.op == packet.IM_OP:
@@ -35,8 +35,12 @@ def proc_packet(rec_packet, merkle_cache, root_reg):
     #if it is a data packet write to output, read associated counter, concatenate, then send to hash engine
     elif rec_packet.op == packet.DATA_OP:
         #first write data to output (do nothing for simulator)
-        #next read parent counter from cache
-        parent_ctr = merkle_cache.read_cache(rec_packet.parentAddr)
+        #next read parent counter from cache if first data packet, else just read from buffer
+        if rec_packet.num == 0:
+            c_buff.line = merkle_cache.read_cache_line(rec_packet.parentAddr) 
+        #parent_ctr = merkle_cache.read_cache(rec_packet.parentAddr)
+        offset = rec_packet.parentAddr & ((1 << 6) - 1)
+        parent_ctr = c_buff.line[offset : offset + 2] #grab 2 byte counter
         hmac_in = rec_packet.line + parent_ctr + rec_packet.addr.to_bytes(4, byteorder='big')
         return hmac_in, rec_packet.smac
 
@@ -80,6 +84,9 @@ def sentry_sim(num_engines, levels, ways, input_queue):
     #define the cache
     merkle_cache = cache.m_cache(levels, ways)
 
+    #define the counter buffer
+    c_buff = cache.counter_buff()
+
     #define root register
     root_reg = cache.root_reg(b'\x96\x95\xca_S\xcer \x8aj\xef3\xb9.\xef\xd4')
 
@@ -92,7 +99,7 @@ def sentry_sim(num_engines, levels, ways, input_queue):
                 #print("addr: %s, parent_addr: %s" % (hex(val.addr), hex(val.parentAddr)))
                 
                 #process the next packet in the queue
-                input_str, comp_mac = proc_packet(val, merkle_cache, root_reg)
+                input_str, comp_mac = proc_packet(val, merkle_cache, root_reg, c_buff)
                 #spawn thread for the hash engine
                 if input_str is not None:
                     num_engines -= 1
@@ -104,11 +111,12 @@ def sentry_sim(num_engines, levels, ways, input_queue):
                 print(merkle_cache.CACHE_READS)
                 cache_stats = [merkle_cache.CACHE_WRITES + merkle_cache.CACHE_READS]
                 # Open the file in write mode
-                with open("cache_data.csv", 'a') as file:
+                with open("cache_data2.csv", 'a') as file:
                     writer = csv.writer(file)
                     # Write the data to the CSV file
                     writer.writerows(cache_stats)
 
+                merkle_cache.print_cache()
                 print("queue was empty for 3 seconds; we are done receiving")
                 exit("queue was empty for 3 seconds!")
 

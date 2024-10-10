@@ -6,6 +6,11 @@ class root_reg:
     def __init__(self, root=None):
         self.root = root #this is the 16 byte root MAC itself
 
+class counter_buff:
+
+    def __init__(self, line=None):
+        self.line = line    #this is a 64 byte cache line containing a counter group
+
 class m_cache_line:
 
     def __init__(self):
@@ -103,7 +108,7 @@ class m_cache:  #will have one set per level in the tree (not including data or 
         for way in range(len(cache_set.lines)):
 
             if cache_set.lines[way].tag == tag:
-                if level == 0: #parent is a counter
+                if level == 0: #parent is a counter; only useful if not using leaf buffer
                     self.CACHE_READS[level] += 1
                     return cache_set.lines[way].data[offset : offset + 2]
                 else:
@@ -121,12 +126,12 @@ class m_cache:  #will have one set per level in the tree (not including data or 
         level = tree_levels.getLevel(addr) - 1 #lowest cached level is level 1 which is index 0, so need to decrement 1 
         cache_set = self.sets[level]   
         tag = addr & ~((1 << 6) - 1) 
-        offset = addr & ((1 << 6) - 1)
 
         #first check to see if any entries are invalid
         for way in range(len(cache_set.lines)):
 
             if cache_set.lines[way].tag == tag:
+                    self.CACHE_READS[level] += 1
                     return cache_set.lines[way].data[:]
         
         #if we get here it was a cache miss

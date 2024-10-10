@@ -85,7 +85,7 @@ def send_cache_lines(addr, parent_addr, memory, num_lines, output):
         line = memory.read(64)
         memory.seek(smac_addr)
         smac = memory.read(16)
-        send_data_packet(DATA_OP, addr, parent_addr, line, smac, output)
+        send_data_packet(DATA_OP, addr, parent_addr, line, smac, i, output)
         addr += 64
         smac_addr += 16
         parent_addr += 2
